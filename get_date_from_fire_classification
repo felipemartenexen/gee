@@ -3,6 +3,7 @@ var geometry = ee.FeatureCollection('users/felipemartenexen/ISA/microbacia_nivel
 var classification = ee.Image('users/felipemartenexen/Fire_2009');
 
 print('classification',classification);
+
 Map.addLayer(classification,{},'classification');
 
 var blockList_landsat = require('users/geomapeamentoipam/GT_Fogo_MapBiomas:2_Colecao_1.0_2021/module-blockList').blockList();
@@ -70,6 +71,7 @@ landsat = landsat
       .addBands(image)
       .copyProperties(image);
   })
+  
 print(landsat.limit(5))
 
 var qualityMosaic = landsat.qualityMosaic('nbr');
