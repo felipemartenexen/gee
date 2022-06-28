@@ -13,7 +13,9 @@ function runTasks2() {
     var eeDialog = $$('ee-dialog', e.shadowRoot)[0]
 var paperDialog = $$('paper-dialog', eeDialog.shadowRoot)[0]
     $$('.ok-button', paperDialog)[0].click()
-});
+    })
+}
+
     
 runTask1();
 
