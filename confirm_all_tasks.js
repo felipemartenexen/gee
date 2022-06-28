@@ -2,7 +2,7 @@
 //2) Quanfo todas as tarefas estejam com o ícone ´Run´ em azul na aba de task, aperte F12 para entrar no modo de desenvolvedor do Chrome
 //Na opção ' Console' digite:
 
-function() runTasks1 {
+function runTasks1 ()  {
     $$('.run-button' ,$$('ee-task-pane')[0].shadowRoot).forEach(function(e) {
          e.click();
     })
