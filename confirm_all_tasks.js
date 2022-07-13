@@ -17,6 +17,6 @@ var paperDialog = $$('paper-dialog', eeDialog.shadowRoot)[0]
 }
 
     
-runTask1();
+runTasks1();
 
-runTask2();
+runTasks2();
