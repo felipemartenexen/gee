@@ -18,19 +18,19 @@ var fire_2008 = ee.Image("users/scripts_MapiaEng/ISA/fire/fire_2008").select('b1
     fire_2021 = ee.Image("users/scripts_MapiaEng/ISA/fire/fire_2021").select('b1');
 
 var frequency =   fire_2008
-                  .add(fire_2009)
-                  .add(fire_2010)
-                  .add(fire_2011)
-                  .add(fire_2012)
-                  .add(fire_2013)
-                  .add(fire_2014)
-                  .add(fire_2015)
-                  .add(fire_2016)
-                  .add(fire_2017)
-                  .add(fire_2018)
-                  .add(fire_2019)
-                  .add(fire_2020)
-                  .add(fire_2021);
+                    .add(fire_2009)
+                    .add(fire_2010)
+                    .add(fire_2011)
+                    .add(fire_2012)
+                    .add(fire_2013)
+                    .add(fire_2014)
+                    .add(fire_2015)
+                    .add(fire_2016)
+                    .add(fire_2017)
+                    .add(fire_2018)
+                    .add(fire_2019)
+                    .add(fire_2020)
+                    .add(fire_2021);
 
 Map.addLayer(fire_2008, '', 'fire_2008', false);
 Map.addLayer(fire_2009, '', 'fire_2009', false);
@@ -52,7 +52,7 @@ Map.addLayer(frequency.selfMask(), {min: 1, max: 14, palette: palette}, 'Frequen
 Export.image.toAsset({
   image:frequency,
   description:'frequency_2008_2021',
-  assetId:'users/scripts_MapiaEng/ISA/fire',
+  assetId:'users/scripts_MapiaEng/ISA/fire/frequency_2008_2021',
   region: geometry,
   scale:30,
   maxPixels: 1e13
