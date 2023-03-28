@@ -1,0 +1,100 @@
+var deter = ee.FeatureCollection("users/ipam_flp/deter/deter-amz-public-2023mar15"),
+  biomas = ee.FeatureCollection("users/ipam_flp/base/biomas_250mil"),
+  use_land = ee.Image("projects/mapbiomas-workspace/public/collection7/mapbiomas_collection70_integration_v2"),
+  fire_col2 = ee.Image("projects/mapbiomas-workspace/FOGO_COL2/SUBPRODUTOS/mapbiomas-fire-collection2-monthly-burned-coverage-v1");
+
+var roi = biomas.filter(ee.Filter.eq('Bioma', 'Amazônia'));
+
+var years = ee.List.sequence(2005, 2015, 1).getInfo();
+
+print(years);
+ 
+function cal_area(image){
+  
+  var area = image.multiply(ee.Image.pixelArea())
+            .reduceRegion(ee.Reducer.sum(), roi, 30, null, null, false, 1e13)
+            .get('constant');
+  
+  var area_km2 = ee.Number(area).divide(1e6);
+  
+  return area_km2;
+  
+}
+
+function compare(year){
+  
+  var previus = year - 1;
+  
+  var forest = use_land.select('classification_'+ (previus)).eq(3);
+  
+  forest = ee.Image(1).mask(forest).clip(roi);
+  
+  //col2
+  var col2 = ee.Image(1).mask(fire_col2.select('burned_coverage_' + year));
+  
+  col2 =  col2
+          .updateMask(forest)
+          .clip(roi);
+  
+  var start,
+  end,
+  fc;
+  
+  if (year < 2016) {
+    
+    fc = ee.FeatureCollection('users/ipam_flp/deter/deter_modis_' + year);
+    
+  }else{
+    
+    year == 2016 ? (start = 1451613600000) && (end = 1483235999000) : "";
+    year == 2017 ? (start = 1483236000000) && (end = 1514771999000) : "";
+    year == 2018 ? (start = 1514772000000) && (end = 1546307999000) : "";
+    year == 2019 ? (start = 1546308000000) && (end = 1577847599000) : "";
+    year == 2020 ? (start = 1577847600000) && (end = 1609469999000) : "";
+    year == 2021 ? (start = 1609470000000) && (end = 1641005999000) : "";
+    year == 2022 ? (start = 1641006000000) && (end = 1672541999000) : "";
+    
+    fc = deter.filter(ee.Filter.rangeContains('VIEW_DATE', start, end));
+    
+  }
+  
+  var deter_img = ee.Image().paint(fc);
+  
+  deter_img = ee.Image(1).mask(deter_img.select('constant').eq(0));
+  
+  deter_img = deter_img
+              .updateMask(forest)
+              .clip(roi);
+  
+  //concordance
+  var concordance = deter_img.updateMask(col2);
+  
+  //only deter
+  var only_deter_img = deter_img.updateMask(col2.unmask().not());
+  
+  //only col2
+  var only_col2 = col2.updateMask(deter_img.unmask().not());
+  
+  var result = ee.Feature(null, {
+    "year": String(year),
+    "deter": cal_area(deter_img),
+    "only_deter": cal_area(only_deter_img),
+    "col2": cal_area(col2),
+    "only_col2": cal_area(only_col2),
+    "concordance": cal_area(concordance)
+  });
+  
+  result = ee.FeatureCollection(result);
+  
+  print(result);
+  
+  return Export.table.toDrive({
+          collection: result, 
+          description: 'compare_deter_vs_col2_' + year, 
+          folder: 'compare_deter_vs_col2' + year, 
+          fileFormat: 'CSV'
+        });
+  
+}
+
+var data = years.map(compare);
