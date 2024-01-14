@@ -5,8 +5,6 @@ var roi = ee.FeatureCollection("users/Lucas_Oliveira_Lima/ZP_Resex_Comunidades")
     
 var list = ee.List.sequence(1, 10, 1).getInfo();
 
-print(list);
-
 print(roi.geometry().area().divide(10000));
 
 Map.addLayer(classe, {palette: 'red'}, 'Classe');
