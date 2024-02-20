@@ -13,26 +13,30 @@ var classIds = [
     3, // Formação Florestal
     4, // Formação Savânica
     5, // Mangue
+    6, // Floresta Alagável (beta)
     49, // Restinga Florestal
     11, // Área Úmida Natural não Florestal
     12, // Formação Campestre
     32, // Apicum
     29, // Afloramento Rochoso
+    50, // Restinga Herbácea
     13, // Outra Formação não Florestal
     18, // Agricultura
     39, // Soja
     20, // Cana
     40, // Arroz
+    62, // Algodão
     41, // Outras Lavouras Temporárias
     46, // Café
     47, // Citrus
+    35, // Dendê
     48, // Outras Lavaouras Perenes
     9, // Silvicultura
     15, // Pastagem
     21, // Mosaico de Agricultura ou Pastagem
     22, // Área não Vegetada
     23, // Praia e Duna
-    24, // Infraestrutura Urbana
+    24, // Área Urbanizada
     30, // Mineração
     25, // Outra Área não Vegetada
     33, // Rio, Lago e Oceano
