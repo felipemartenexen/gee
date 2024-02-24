@@ -40,7 +40,7 @@ var classIds = [
     30, // Mineração
     25, // Outra Área não Vegetada
     33, // Rio, Lago e Oceano
-    31 // 'Aquicultura
+    31 // 'Aquicultura 
 ];
 
 // Output csv name
