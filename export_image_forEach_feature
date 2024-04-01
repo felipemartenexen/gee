@@ -8,7 +8,6 @@ var municipios_array = ['Anapu', 'Conceição do Araguaia',
                      
                      
 municipios_array.forEach(function(c) {
-  print(c);
   var sel = municipios.filter(ee.Filter.eq('NM_MUN', c));
     var land_use = ee.Image(landCover)
                 .clip(sel);
