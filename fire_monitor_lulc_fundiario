@@ -1,0 +1,114 @@
+var ter = ee.Image("users/geomapeamentoipam/AUXILIAR/territorios/base_fundiaria_ipam_2024"),
+    monitor = ee.ImageCollection("projects/mapbiomas-workspace/FOGO/MONITORAMENTO/collection-fire-monthly-sentinel2-v3"),
+    imageVisParam = {"opacity":1,"bands":["b1"],"min":2,"max":700,"palette":["fffa22","fe12ff"]},
+    geometry = 
+    /* color: #d63000 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[-82.00357036116354, 11.339364913693807],
+          [-82.00357036116354, -37.44923112174456],
+          [-31.378570361163547, -37.44923112174456],
+          [-31.378570361163547, 11.339364913693807]]], null, false);
+          
+var lulc = ee.Image('projects/mapbiomas-workspace/public/collection8/mapbiomas_collection80_integration_v1').select('classification_2022').eq(15).selfMask();
+
+var biomas = ee.FeatureCollection("users/ipam_flp/base/biomas_250mil");
+
+var amz = biomas.filter(ee.Filter.eq('Bioma', 'Amazônia'));
+
+var mes = [1,2,3,4,5,6,7,8,9,10,11,12];
+
+var ter_id = [2, 3, 102, 103, 202, 203, 302, 303, 402, 403, 502, 503, 602, 603];
+
+var fire_2022 = [];
+
+var fire_2023 = [];
+
+var ter_ti = [];
+
+mes.forEach(function(e){
+  
+  var img22 = 'projects/mapbiomas-workspace/FOGO/MONITORAMENTO/collection-fire-monthly-sentinel2-v3/brazil-2022-' + e;
+  
+  var img23 = 'projects/mapbiomas-workspace/FOGO/MONITORAMENTO/collection-fire-monthly-sentinel2-v3/brazil-2023-' + e;
+
+  fire_2022.push(img22);
+  
+  fire_2023.push(img23);
+
+});
+
+ter_id.forEach(function(e){
+  
+  var img = ee.Image(1).mask(ter.eq(e));
+
+  ter_ti.push(img);
+
+});
+
+var mon_22 = ee.ImageCollection(fire_2022).mosaic();
+
+var mon_23 = ee.ImageCollection(fire_2023).mosaic();
+
+var ter_ind = ee.ImageCollection(ter_ti).mosaic().clip(amz);
+
+var fire_ti = mon_23.updateMask(lulc).updateMask(ter_ind);
+
+var area = function(e){
+  
+  var img = ee.Image(1).mask(e).gt(0.1);
+  
+  var pixelArea = img.multiply(ee.Image.pixelArea());
+  
+  var area_ha = pixelArea.reduceRegion({
+		reducer: ee.Reducer.sum(),
+    geometry: amz.geometry().bounds(),
+    scale:30,
+    crs:null,
+    crsTransform:null,
+    bestEffort:false,
+    maxPixels:1e13
+  }).get('constant');
+  
+  var fc = ee.Feature(null,{'area': ee.Number(area_ha).divide(1e6)});
+  
+  return ee.FeatureCollection(fc);
+  
+};
+
+var result = area(fire_ti);
+
+  Export.table.toDrive({
+	collection: result,
+	description: 'teste',
+	folder: 'AREA-EXPORT',
+	fileNamePrefix: 'TESTE',
+
+});
+
+Export.image.toDrive({
+	image: mon_23.selfMask(),
+	description: 'monitor_23',
+	folder: 'AREA-EXPORT',
+	fileNamePrefix: 'monitor_23',
+	region: geometry,
+	scale: 30,
+	maxPixels: 1e13
+});
+
+Map.addLayer(ter, imageVisParam, 'ter'); 
+
+Map.addLayer(ter_ind, {palette: 'black'}, 'ter_ind');
+
+Map.addLayer(lulc, {palette: 'green'}, 'ter_ind');
+
+Map.addLayer(fire_ti, {palette: 'purple'}, 'fire_ti'); 
+
+Map.addLayer(mon_22, {palette: 'red'}, 'mon_22'); 
+
+Map.addLayer(mon_23, {palette: 'blue'}, 'mon_23');
+
