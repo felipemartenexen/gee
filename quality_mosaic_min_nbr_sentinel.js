@@ -3,7 +3,7 @@ var oldBands = ['QA60', 'B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', '
 var newBands = ['QA60', 'cb', 'blue', 'green', 'red', 'red1', 'red2', 'red3', 'nir', 'nir2', 'waterVapor', 'swir1', 'swir2', 'cloudShadowMask'];
 
 var sentinel = ee.ImageCollection(ee.Join.saveFirst('cloud_mask').apply({
-        primary: ee.ImageCollection("COPERNICUS/S2_SR"),
+        primary: ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED'),
         secondary: ee.ImageCollection("COPERNICUS/S2_CLOUD_PROBABILITY"),
         condition:ee.Filter.equals({leftField: 'system:index', rightField: 'system:index'})
       }))
