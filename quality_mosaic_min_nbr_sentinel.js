@@ -1,8 +1,6 @@
+var oldBands = ['QA60', 'B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B9', 'B11', 'B12', 'B12'];
 
-var oldBands = ['QA60', 'B1', 'B2',   'B3',    'B4',  'B5',  'B6',  'B7', 'B8',  'B8A',    'B9',           'B11',   'B12',  'B12'];
-
-var newBands = ['QA60', 'cb', 'blue', 'green', 'red', 'red1','red2','red3','nir'  ,'nir2', 'waterVapor',   'swir1', 'swir2','cloudShadowMask'];
-
+var newBands = ['QA60', 'cb', 'blue', 'green', 'red', 'red1', 'red2', 'red3', 'nir', 'nir2', 'waterVapor', 'swir1', 'swir2', 'cloudShadowMask'];
 
 var sentinel = ee.ImageCollection(ee.Join.saveFirst('cloud_mask').apply({
         primary: ee.ImageCollection("COPERNICUS/S2_SR"),
