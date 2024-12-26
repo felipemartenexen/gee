@@ -1,0 +1,153 @@
+// -----------------------------------------
+// Etapa 1: Configurações Iniciais
+// -----------------------------------------
+var years = [2019, 2020, 2021, 2022, 2023, 2024]; 
+var months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'];
+
+var basePoints = "projects/workspace-ipam/assets/FOGO/monthly-focus-sul-america/focus_";
+var baseRaster = "projects/mapbiomas-public/assets/brazil/fire/monitor/mapbiomas_fire_monthly_burned_v1/brazil-";
+
+var bioma = ee.FeatureCollection("users/geomapeamentoipam/AUXILIAR/biomas_IBGE_250mil")
+    .filterMetadata('Bioma', 'equals', 'Amazônia');
+
+// -----------------------------------------
+// Etapa 2: Criação da grade (grid)
+// -----------------------------------------
+var dx = 1;  
+var dy = 1;  
+
+var bounds = bioma.geometry().bounds();
+var coords = ee.List(bounds.coordinates().get(0));
+
+var minLon = ee.Number(ee.List(coords.get(0)).get(0));
+var minLat = ee.Number(ee.List(coords.get(0)).get(1));
+var maxLon = ee.Number(ee.List(coords.get(2)).get(0));
+var maxLat = ee.Number(ee.List(coords.get(2)).get(1));
+
+var lonSteps = ee.List.sequence(minLon, maxLon, dx);
+var latSteps = ee.List.sequence(minLat, maxLat, dy);
+
+function makeTile(lon, lat) {
+  var tileCoords = ee.List([
+    [lon, lat],
+    [ee.Number(lon).add(dx), lat],
+    [ee.Number(lon).add(dx), ee.Number(lat).add(dy)],
+    [lon, ee.Number(lat).add(dy)],
+    [lon, lat]
+  ]);
+  return ee.Feature(ee.Geometry.Polygon([tileCoords]), {});
+}
+
+var tiles = lonSteps.map(function(lon) {
+  return latSteps.map(function(lat) {
+    return makeTile(lon, lat);
+  });
+}).flatten();
+
+var grid = ee.FeatureCollection(tiles).filterBounds(bioma);
+grid = grid.filterBounds(bioma);
+
+// -----------------------------------------
+// Etapa 3: Função para processar um ano em um tile
+// -----------------------------------------
+function processTileYear(tile, year) {
+  // tile é ee.Feature, year é número
+  var ring = ee.List(tile.geometry().coordinates().get(0));  
+  var firstCoord = ee.List(ring.get(0)); 
+  var tileLonMin = firstCoord.get(0);
+  var tileLatMin = firstCoord.get(1);
+
+  // Carregar todos os pontos do ano para este tile
+  var monthlyCollections = [];
+  for (var i = 0; i < months.length; i++) {
+    var month = months[i];
+    // Concatenação no lado do cliente
+    var pathPoints = basePoints + year.toString() + '-' + month;
+    var fcMonth = ee.FeatureCollection(pathPoints).filterBounds(tile.geometry());
+    monthlyCollections.push(fcMonth);
+  }
+
+  var yearlyPoints = ee.FeatureCollection(monthlyCollections).flatten();
+  var empty = yearlyPoints.size().eq(0);
+
+  var noData = ee.Feature(null, {
+    'year': year,
+    'total': 0,
+    'inside': 0,
+    'tile_lon_min': tileLonMin,
+    'tile_lat_min': tileLatMin
+  });
+
+  // Carregar as imagens anuais (mosaico dos meses) sem zero à esquerda
+  var imageList = [];
+  for (var j = 0; j < months.length; j++) {
+    var m = months[j];
+    var monthInt = parseInt(m, 10); // Remove zero à esquerda
+    var imagePath = baseRaster + year.toString() + '-' + monthInt.toString();
+    var img = ee.Image(imagePath);
+    imageList.push(img);
+  }
+
+  var yearlyImage = ee.ImageCollection(imageList).mosaic()
+    .clip(tile.geometry().intersection(bioma.geometry()))
+    .eq(1);
+
+  var resultFC = yearlyImage.reduceRegions({
+    collection: yearlyPoints,
+    reducer: ee.Reducer.first(),
+    scale: 30
+  }).map(function(f) {
+    return f.set('year', year);
+  });
+
+  return ee.FeatureCollection(ee.Algorithms.If(empty, ee.FeatureCollection([noData]), resultFC));
+}
+
+// -----------------------------------------
+// Etapa 4: Processar todos os anos e tiles
+// -----------------------------------------
+var allResults = [];
+var tilesList = grid.toList(grid.size());
+
+var tilesCount = tilesList.size().getInfo();
+for (var t = 0; t < tilesCount; t++) {
+  var tile = ee.Feature(tilesList.get(t));
+  for (var y = 0; y < years.length; y++) {
+    var year = years[y];
+    var fc = processTileYear(tile, year);
+    allResults.push(fc);
+  }
+}
+
+// Unir todos os resultados
+var results = ee.FeatureCollection(allResults).flatten();
+
+// -----------------------------------------
+// Agregação final por ano
+// -----------------------------------------
+var aggregatedFeatures = [];
+for (var y = 0; y < years.length; y++) {
+  var year = years[y];
+  var filtered = results.filter(ee.Filter.eq('year', year));
+  var total = filtered.size();
+  var inside = filtered.filter(ee.Filter.eq('first', 1)).size();
+  aggregatedFeatures.push(ee.Feature(null, {
+    'year': year,
+    'total': total,
+    'inside': inside
+  }));
+}
+
+var aggregated = ee.FeatureCollection(aggregatedFeatures);
+
+// -----------------------------------------
+// Etapa 5: Exportar Resultados
+// -----------------------------------------
+Export.table.toDrive({
+  collection: aggregated,
+  description: 'PointsInsideRasterByYear_Grid',
+  fileNamePrefix: 'PointsInsideRasterByYear_Grid',
+  fileFormat: 'CSV'
+});
+
+print('Resultados:', aggregated);
