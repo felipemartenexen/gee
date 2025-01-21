@@ -1,0 +1,73 @@
+var fire = ee.Image('projects/mapbiomas-public/assets/brazil/fire/collection3/mapbiomas_fire_collection3_annual_burned_v1')
+
+var year = 2024;
+
+var bioma = ee.FeatureCollection("users/geomapeamentoipam/AUXILIAR/biomas_IBGE_250mil")
+    .filterMetadata('Bioma', 'equals', 'Amazônia');
+
+bioma = ee.Image().paint(bioma, 0, 2);
+
+var mosaicBefore = ee.ImageCollection('projects/mapbiomas-workspace/FOGO_COL3/1_mosaics/landsat-view')
+                       .filterMetadata('year','equals',year);
+
+var mosaicAfter = ee.ImageCollection('projects/mapbiomas-workspace/FOGO_COL3/1_mosaics/landsat-view')
+                       .filterMetadata('year','equals', (year + 1));
+                       
+var fire1 = fire.select('burned_area_'+ year);
+var fire2 = fire.select('burned_area_'+ (year + 1));
+
+var map1 = ui.Map();
+var map2 = ui.Map();
+var map3 = ui.Map();
+var map4 = ui.Map();
+
+map1.addLayer(mosaicBefore, {min: 0.03, max: 50, bands: ['swir1', 'nir', 'red']}, 'mosaicBefore');
+map3.addLayer(mosaicBefore, {min: 0.03, max: 50, bands: ['swir1', 'nir', 'red']}, 'mosaicBefore');
+map1.addLayer(bioma, {color: 'blue'}, 'bioma');
+
+map2.addLayer(mosaicAfter, {min: 0.03, max: 50, bands: ['swir1', 'nir', 'red']}, 'mosaicAfter');
+map4.addLayer(mosaicAfter, {min: 0.03, max: 50, bands: ['swir1', 'nir', 'red']}, 'mosaicAfter');
+
+map1.addLayer(fire1, {palette: 'red'}, 'Fire in ' + year);
+map2.addLayer(fire2, {palette: 'yellow'}, 'Fire in ' + (year + 1));
+
+map1.add(ui.Label('Fire ' + year, {position: 'bottom-center'}));
+map2.add(ui.Label('Fire ' + (year + 1), {position: 'bottom-center'}));
+
+// Link all maps for synchronized zoom and pan
+ui.Map.Linker([map1, map2, map3, map4]);
+
+// Enable zooming on the top-left map.
+map1.setControlVisibility({zoomControl: true});
+
+// Show the scale (e.g. '500m') on the bottom-right map.
+map3.setControlVisibility({scaleControl: true});
+
+// Create a grid of maps.
+var mapGrid = ui.Panel(
+    [
+      ui.Panel([map1, map2], null, {stretch: 'both'}),
+      ui.Panel([map3, map4], null, {stretch: 'both'})
+    ],
+    ui.Panel.Layout.Flow('horizontal'), {stretch: 'both'});
+
+// Center the map at an interesting spot in Greece. All
+// other maps will align themselves to this parent map.
+map1.setCenter(-76.55, 38.92, 6);
+
+
+/*
+ * Add a title and initialize
+ */
+
+// Create a title.
+var title = ui.Label('Title', {
+  stretch: 'horizontal',
+  textAlign: 'center',
+  fontWeight: 'bold',
+  fontSize: '24px'
+});
+
+// Add the maps and title to the ui.root.
+ui.root.widgets().reset([title, mapGrid]);
+ui.root.setLayout(ui.Panel.Layout.Flow('vertical'));
