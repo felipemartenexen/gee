@@ -1,7 +1,8 @@
-var regions = [1];
+var regions = [1,2,3,4,5,6,7,8,9];
 
 var years = [];
-for (var y = 2000; y <= 2023; y++) {
+
+for (var y = 2026; y <= 2026; y++) {
   years.push(y);
 }
 
@@ -9,10 +10,10 @@ years.forEach(function(y){
   
     regions.forEach(function(e){
     
-    var asset_id = "projects/ee-felipe-martenexen/assets/fire_col4/fireAgain/image/col4_r" + e +"_v5_" + y;
+    var asset_id = "users/geomapeamentoipam/COLECAO_FOGO_SENTINEL/CLASSIFICACAO/AMAZONIA/queimada_amazonia_v9_13_region" + e + "_" + y + "_8_";
   
     var acl = {
-        "owners": ["luiz.felipe@ipam.org.br"],  
+        "owners": ["geomapeamento.ipam@gmail.com"],  
         'all_users_can_read': true
     };
     
